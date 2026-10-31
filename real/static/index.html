@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#522c1c">
+<title>GeneRev4 REAL – helyi pörkölővezérlés</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="header"><div class="bar"><div class="brand">◈ <b>GeneRev4 REAL</b><small>Helyi TCP-híd · Nico forrása alapján</small></div><span class="pill">LOCALHOST · NEM NYILVÁNOS</span></div></header>
+<main>
+<div class="danger"><strong>FONTOS: valódi fűtőberendezés</strong><p>A rendszer még nem esett át hardveres biztonsági teszten. A parancs elküldése <b>nem</b> bizonyítja a gép végrehajtását, a kapcsolat megszakadása pedig <b>nem</b> garantál fűtésleállítást. Használat előtt szükséges a független túlmelegedés-védelem és az ellenőrizhető fizikai vészleállító. A gépet soha ne hagyd felügyelet nélkül.</p></div>
+<section class="box">
+<div class="split"><div><div class="sub">TCP / ESP8266</div><h1>Valódi kapcsolat</h1></div><span class="status" id="statusBadge">NINCS KAPCSOLAT</span></div>
+<div class="line"><label>ESP8266 helyi IP-címe<input id="host" inputmode="decimal" placeholder="192.168.0.100" spellcheck="false" autocomplete="off"></label><label>TCP-port<input id="port" type="number" min="1" max="65535" value="5333"></label></div>
+<div class="buttons"><button class="primary" id="connect">Csatlakozás</button><button id="disconnect" class="secondary" disabled>Kapcsolat bontása</button></div>
+<p class="muted">Csak a valódi pörkölő IP-címét add meg – ne a telefon vagy a laptop IP-címét. A kapcsolat állapota és a hőmérsékleti adatok külön ellenőrzendők.</p>
+</section>
+<div class="meters">
+<section class="box small"><div class="sub">MÉRT HŐMÉRSÉKLET</div><div class="val" id="temperature">— °C</div><small id="freshness">Nincs friss mérés</small></section>
+<section class="box small"><div class="sub">HELYI IDŐMÉRÉS</div><div class="val" id="clock">—</div><small>Nem a firmware visszajelzése</small></section>
+<section class="box small"><div class="sub">KÉRT CÉLHŐMÉRSÉKLET</div><div class="val" id="shownTarget">180 °C</div><small>TCP-n elküldött kérés, nem visszaigazolás</small></section>
+</div>
+<section class="box">
+<div class="sub">ÁLLAPOT</div><h2 id="requestedState">ISMERETLEN</h2><p id="notice" class="warn" role="alert">Nincs TCP-kapcsolat. A pörkölő fizikai állapota nem ismert.</p>
+<div class="sub">VALÓDI MÉRÉSI ADATOK IDŐSORÁNAK ELŐNÉZETE</div>
+<svg id="history" viewBox="0 0 720 190" aria-label="A TCP-n ténylegesen fogadott hőmérsékletértékek grafikonja" role="img"></svg>
+<div class="buttons"><button class="secondary" id="export" disabled>Mért adatok CSV mentése</button><a class="link" href="https://r32rz782z82ze.github.io/GeneRev4-Web/" target="_blank" rel="noopener">Profilkezelő weboldal ↗</a></div>
+</section>
+<section class="box">
+<div class="split"><div><div class="sub">VALÓDI PARANCSOK</div><h2>Felügyelt kézi vezérlés</h2></div><span id="modeBadge" class="pill">MONITOR MÓD</span></div>
+<p class="muted">A START és a hőmérséklet-változtatás csak friss szenzoradattal és helyi, tudatos engedélyezéssel használható. Az automatikus profilkövetés nem aktív: a Nico-féle firmware-ből nem igazolt a kapcsolatvesztés esetére független fűtésleállítás.</p>
+<div class="arm-panel"><label for="armText">Fizikai ellenőrzés és felügyelet esetén írd be: <strong>FELUGYELEM</strong></label><div class="buttons"><input id="armText" placeholder="FELUGYELEM" autocomplete="off" spellcheck="false"><button id="arm" class="secondary" disabled>Indítás engedélyezése (2 perc)</button></div><p id="armState" class="muted">Nincs élesítve.</p></div>
+<div class="control-grid"><button id="start" class="primary" disabled>🔥 START</button><button id="cool" class="cool" disabled>❄ COOL – hűtés kérése</button><button id="stop" class="secondary" disabled>■ STOP – dob visszaállítása</button></div>
+<p class="warn">A STOP Nico kódjában visszaállítja a dobot, és csak 80 °C alatt kapcsolja le a ventilátort. Vészhelyzetben ne a webalkalmazásra hagyatkozz: használd a fizikai vészleállítót és az előírt eljárást.</p>
+<div class="split slider-head"><label for="target"><b>Kért célhőmérséklet</b></label><b id="targetValue">180 °C</b></div>
+<input type="range" id="target" min="150" max="250" value="180" step="1">
+<div class="split limit"><span>150 °C</span><span>250 °C</span></div>
+<button class="secondary" id="setpoint" disabled>Új célérték elküldése</button>
+<p class="muted" id="lastCommand">Utolsó parancs: nincs.</p>
+</section>
+<footer>Nico: <a href="https://github.com/nekowokaburu/GeneCBR101Automation" target="_blank" rel="noopener">GeneCBR101Automation</a> · <a href="https://github.com/r32rz782z82ze/GeneRev4-Web/tree/main/real" target="_blank" rel="noopener">Web Real forrás és biztonsági leírás</a><br>Csak a saját Windows laptopodon, 127.0.0.1-en fut. A nyilvános GitHub Pages nem kap hozzáférést a vezérléshez.</footer>
+</main>
+<script src="/app.js" defer></script>
+</body>
+</html>
