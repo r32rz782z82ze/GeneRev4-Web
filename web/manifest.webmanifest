@@ -1,0 +1,19 @@
+{
+  "name": "GeneRev4 – Profilkezelő",
+  "short_name": "GeneRev4 Web",
+  "description": "Nico GeneRev4 profilok időbeli előnézete. Nem vezérel valódi pörkölőt.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#542c1c",
+  "theme_color": "#542c1c",
+  "lang": "hu",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+name: GeneRev4 Web - Pages
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/web-pages.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: generev4-web-pages
+  cancel-in-progress: true
+jobs:
+  test:
+    name: Test GeneRev4 profiles
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test Nico profile formats
+        run: node --test web/tests/profile.test.mjs
+      - name: Validate browser JavaScript syntax
+        run: |
+          node --check --input-type=module < web/app.js
+          node --check web/sw.js
+  deploy:
+    name: Publish profile webapp
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload static webapp
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: web
+      - name: Deploy GitHub Pages
+        uses: actions/deploy-pages@v4
+        id: deployment
