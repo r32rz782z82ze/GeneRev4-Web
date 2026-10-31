@@ -31,6 +31,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m compileall -q real/bridge.py windows
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:PYTHONPATH = (Resolve-Path 'real').Path
           python windows/GeneRev4_Windows.py --self-test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install PyInstaller
