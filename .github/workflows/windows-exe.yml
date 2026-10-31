@@ -1,0 +1,64 @@
+name: GeneRev4 Windows - EXE build
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'windows/**'
+      - 'real/bridge.py'
+      - '.github/workflows/windows-exe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    name: Build standalone Windows EXE
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+      - name: Verify Nico protocol, safety checks and Windows profiles
+        shell: pwsh
+        run: |
+          python -m unittest discover -s real/tests -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s windows/tests -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m compileall -q real/bridge.py windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python windows/GeneRev4_Windows.py --self-test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install PyInstaller
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+      - name: Build self-contained graphical EXE
+        shell: pwsh
+        run: |
+          python -m PyInstaller --clean --noconfirm --onefile --windowed --name GeneRev4_Windows --paths real --paths windows windows/GeneRev4_Windows.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (!(Test-Path "dist/GeneRev4_Windows.exe")) { throw "Windows EXE not created" }
+      - name: Smoke-test compiled EXE without any roaster hardware
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath (Resolve-Path "dist/GeneRev4_Windows.exe").Path -ArgumentList '--self-test' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Windows EXE self-test failed with exit code $($p.ExitCode)" }
+      - name: Package Windows application
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "out" -Force | Out-Null
+          Copy-Item "dist/GeneRev4_Windows.exe" "out/GeneRev4_Windows.exe"
+          Copy-Item "windows/README.md" "out/OLVASD_EL_GeneRev4_Windows.md"
+          Compress-Archive -Path "out/*" -DestinationPath "GeneRev4_Windows_EXE.zip" -Force
+      - name: Publish Windows EXE and ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: GeneRev4-Windows-EXE
+          path: |
+            dist/GeneRev4_Windows.exe
+            GeneRev4_Windows_EXE.zip
+          retention-days: 30
+          if-no-files-found: error
