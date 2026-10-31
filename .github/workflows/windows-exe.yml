@@ -11,9 +11,9 @@ permissions:
   contents: read
 jobs:
   build:
-    name: Build standalone Windows EXE
+    name: Build portable Windows application (no self-extraction)
     runs-on: windows-2022
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - name: Checkout project
         uses: actions/checkout@v4
@@ -35,31 +35,44 @@ jobs:
           python windows/GeneRev4_Windows.py --self-test
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install PyInstaller
-        run: python -m pip install --disable-pip-version-check pyinstaller==6.16.0
-      - name: Build self-contained graphical EXE
         shell: pwsh
         run: |
-          python -m PyInstaller --clean --noconfirm --onefile --windowed --name GeneRev4_Windows --paths real --paths windows windows/GeneRev4_Windows.py
+          python -m pip install --disable-pip-version-check pyinstaller==6.16.0
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          if (!(Test-Path "dist/GeneRev4_Windows.exe")) { throw "Windows EXE not created" }
-      - name: Smoke-test compiled EXE without any roaster hardware
+      - name: Build multi-file portable app (avoids _decimal.pyd onefile extraction)
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath (Resolve-Path "dist/GeneRev4_Windows.exe").Path -ArgumentList '--self-test' -Wait -PassThru
-          if ($p.ExitCode -ne 0) { throw "Windows EXE self-test failed with exit code $($p.ExitCode)" }
-      - name: Package Windows application
+          python -m PyInstaller --clean --noconfirm --onedir --noupx --windowed --contents-directory _internal --name GeneRev4_Windows --paths real --paths windows windows/GeneRev4_Windows.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $app = "dist/GeneRev4_Windows"
+          if (!(Test-Path "$app/GeneRev4_Windows.exe")) { throw "GeneRev4_Windows.exe missing" }
+          $decimal = Get-ChildItem -Path $app -Filter '_decimal.pyd' -Recurse -File
+          if (!$decimal) { throw "Python decimal extension missing from portable distribution" }
+          Write-Host "Embedded Python native decimal extensions:"
+          $decimal | ForEach-Object { Write-Host $_.FullName }
+      - name: Test compiled Windows EXE without roaster hardware
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path "out" -Force | Out-Null
-          Copy-Item "dist/GeneRev4_Windows.exe" "out/GeneRev4_Windows.exe"
-          Copy-Item "windows/README.md" "out/OLVASD_EL_GeneRev4_Windows.md"
-          Compress-Archive -Path "out/*" -DestinationPath "GeneRev4_Windows_EXE.zip" -Force
-      - name: Publish Windows EXE and ZIP
+          $app = (Resolve-Path "dist/GeneRev4_Windows/GeneRev4_Windows.exe").Path
+          $p = Start-Process -FilePath $app -ArgumentList '--self-test' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Windows portable EXE self-test failed: $($p.ExitCode)" }
+      - name: Add instructions and SHA256 manifest
+        shell: pwsh
+        run: |
+          $app = "dist/GeneRev4_Windows"
+          Copy-Item "windows/README.md" "$app/OLVASD_EL_GeneRev4_Windows.md"
+          "GeneRev4 Windows portable build - SHA256" | Set-Content "$app/SHA256.txt" -Encoding utf8
+          Get-ChildItem "$app" -File -Recurse | Where-Object { $_.Name -ne "SHA256.txt" } | ForEach-Object {
+            $hash = Get-FileHash -Path $_.FullName -Algorithm SHA256
+            $relative = $_.FullName.Substring((Resolve-Path $app).Path.Length + 1)
+            "$($hash.Hash)  $relative" | Add-Content "$app/SHA256.txt" -Encoding utf8
+          }
+          $total = (Get-ChildItem $app -File -Recurse | Measure-Object Length -Sum).Sum
+          Write-Host "Portable application bytes: $total"
+      - name: Upload complete Windows portable folder
         uses: actions/upload-artifact@v4
         with:
-          name: GeneRev4-Windows-EXE
-          path: |
-            dist/GeneRev4_Windows.exe
-            GeneRev4_Windows_EXE.zip
+          name: GeneRev4-Windows-Portable-ONEDIR
+          path: dist/GeneRev4_Windows/
           retention-days: 30
           if-no-files-found: error

@@ -1,47 +1,54 @@
-# GeneRev4 REAL – önálló Windows alkalmazás
+# GeneRev4 REAL – hordozható Windows alkalmazás (ONEDIR)
 
-Ez **valódi Windows .exe alkalmazás**, saját ablakkal (Tkinter). A Nico-féle GeneRev4 TCP-parancsait a korábban szoftvertesztelt real/bridge.py vezérlőn keresztül használja. **Nem kell telepíteni a Pythont a futtatásához**: az EXE PyInstallerrel készül.
+**Fontos: az első 2026-10-31-i, egyetlen EXE-be csomagolt változat indításakor egyes gépeken Failed to extract _decimal.pyd: decompression resulted in return code -1 hiba jelent meg.**
 
-## Program letöltése
+A javított kiadás **PyInstaller ONEDIR** felépítésű: a GeneRev4_Windows.exe mellett egy _internal mappa tartalmazza a Python-futtatókörnyezetet és a .pyd modulokat. Ez a kiadás nem bontja ki ezeket minden indításkor a Windows ideiglenes mappájába. A build a Windows GitHub runneren automatikusan ellenőrzi a _decimal.pyd jelenlétét és az EXE önellenőrzését.
 
-GitHub → Actions → **GeneRev4 Windows - EXE build** → legutóbbi sikeres futás → **Artifacts** → **GeneRev4-Windows-EXE**. A letöltött ZIP-ben megtalálod az önálló GeneRev4_Windows.exe fájlt és a magyar útmutatót.
+## Letöltés és indítás (Windows 10/11, 64 bites)
 
-Indítás: a ZIP kibontása után Windows 10/11-en duplán kattints a **GeneRev4_Windows.exe** fájlra. A PyInstaller onefile indítása első alkalommal lassabb lehet. Nincs telepítő, nincs rendszerszintű beavatkozás, de a Windows SmartScreen ismeretlen kiadót jelezhet, mert nincs kódaláíró tanúsítvány. Csak akkor futtasd, ha megbízol a saját GitHub-repódból származó fájlban.
+1. GitHub → Actions → **GeneRev4 Windows - EXE build** → legfrissebb sikeres (zöld) futás.
+2. **Artifacts** → GeneRev4-Windows-Portable-ONEDIR letöltése.
+3. A kapott ZIP-et **teljesen bontsd ki** például C:\GeneRev4_Windows\ mappába; ne futtasd az EXE-t a ZIP előnézetéből.
+4. Ellenőrizd, hogy **ugyanabban a mappában** megtalálható a GeneRev4_Windows.exe fájl, a **_internal mappa**, az útmutató és a SHA256.txt.
+5. Indítsd a GeneRev4_Windows.exe fájlt. **Python telepítése nem szükséges.**
+6. Alapból csak MONITOR mód fut. A valódi hardver kapcsolatát és független biztonságát később kell tesztelni.
 
-## Mit tartalmaz?
+A GeneRev4_Windows.exe fájlt **nem szabad külön elmozgatni** a _internal mappától. Ha csak az EXE-t másolod át, a program nem indul.
 
-- Saját grafikus Windows-felület, NEM böngésző vagy webkiszolgáló.
-- ESP8266 helyi IP-cím és TCP-port megadása (5333 csak kezdeti alapérték).
-- Élő, ténylegesen fogadott numerikus hőmérsékletértékek és grafikon, mérési CSV-export.
-- Manuális START, STOP, COOL és 150–250 °C közötti célhőmérséklet küldése (alapból tiltva).
-- MONITOR mód alapértelmezett; a valódi parancsokhoz külön kétlépcsős helyi engedélyezés szükséges. START előtt friss számszerű adat és kétperces külön élesítés is kell.
-- CSV/TXT profilok betöltése, grafikon és időbeli előnézet, CSV/TXT export. **A profil-előnézet NEM vezérli a pörkölőt.**
-- Helyi eseménynapló a kérésekről, kapcsolatvesztés-figyelés.
+## Ha továbbra is hibát kapsz
+
+- Ne a korábbi egyfájlos .exe-t indítsd; a javított verzió GitHub-csomagjában _internal mappa is van.
+- Bontsd ki a ZIP-et egy rövid helyi útvonalra, például C:\GeneRev4_Windows\, és legyen elegendő szabad hely.
+- Ellenőrizd a Windows Biztonság → Vírus- és veszélyforrás-kezelés → Védelmi előzmények részt, hátha a vírusvédelem zárolt vagy karanténba helyezett egy fájlt. **Ne kapcsold ki a vírusvédelmet és ne állíts be általános kivételt.** Ha blokkolást látsz, a fájlt és a riasztás okát külön vizsgálni kell.
+- A csomag tartalmazza a fájlok SHA256-listáját, ez segít az átvitel sértetlenségének ellenőrzésében.
+- Ha hiányzik a _decimal.pyd, töltsd le újra a teljes javított csomagot, mert hiányos a kibontás vagy a vírusvédelem módosította a fájlokat.
+
+## A program funkciói
+
+- Önálló grafikus Windows-ablak; nem webes böngésző vagy szerver.
+- GeneRev4 ESP8266 LAN IP-cím és TCP-port (5333 a Nico szkriptjében szereplő alapport).
+- Fogadott valós számértékek és élő grafikon, mérési CSV-export.
+- Kézi START, STOP, COOL és 150–250 °C célérték (alapból tiltva, felügyelt élesítés).
+- CSV/TXT profilimport, grafikon, időbeli előnézet, CSV/TXT export (az előnézet **nem vezérel fűtést**).
+- Helyi eseménynapló.
 
 ## Biztonság
 
-**A program nem minősített biztonsági vezérlő; éles pörköléshez még nincs fizikailag tesztelve.**
+A készülékkel **még nem teszteltük**. A Nico-féle ESP8266-firmware teljes változata nem nyilvános, a TCP visszaérkező numerikus érték akár célérték-echo is lehet. A program által elküldött START/STOP/COOL nem hardveres végrehajtási visszaigazolás. Kapcsolatvesztéskor a fűtés **nem garantáltan áll le**.
 
-- Nico ESP8266-firmware-e nem nyilvános, ezért a TCP-port, a telemetria és a firmware kompatibilitása nem igazolt.
-- Egy egyszerű fogadott szám lehet célérték-visszhang és nem valós mért hőmérséklet. A szoftver ezt nem tudja biztonsággal megkülönböztetni.
-- A START/STOP/COOL parancs elküldése nem bizonyítja a fizikai gép állapotát.
-- Friss telemetria hiányakor a híd COOL parancsot próbál küldeni, de kapcsolatvesztéskor **nem tudja garantálni a fűtés lekapcsolását**.
-- A STOP nem tekinthető fizikai vészleállításnak. Független hőhatároló, fizikai vészleállítás és folyamatos személyes felügyelet szükséges.
-- Amíg a hardver nincs ellenőrizve, csak MONITOR módot használj.
+Független hővédelmet, fizikai vészleállítót és személyes felügyeletet kell biztosítani. Hardvertesztig **csak MONITOR mód** ajánlott.
 
-## Fordítás saját Windows számítógépen
+## Forrás / önálló fordítás
 
-Python 3.12 és PyInstaller 6.16 szükséges. A projekt gyökeréből:
+A repó gyökerében, Python 3.12-vel:
 
     python -m pip install pyinstaller==6.16.0
-    python -m PyInstaller --clean --noconfirm --onefile --windowed --name GeneRev4_Windows --paths real --paths windows windows/GeneRev4_Windows.py
+    python -m PyInstaller --clean --noconfirm --onedir --noupx --windowed --contents-directory _internal --name GeneRev4_Windows --paths real --paths windows windows/GeneRev4_Windows.py
 
-Az EXE a dist/GeneRev4_Windows.exe helyre kerül. A GitHub Actions ugyanilyen módon fordítja automatikusan.
+A hordozható alkalmazás a dist/GeneRev4_Windows/ könyvtárban lesz; az egész mappát együtt kell terjeszteni.
 
-## Licenc és forrás
+Források:
+- https://github.com/r32rz782z82ze/GeneRev4-Web
+- https://github.com/nekowokaburu/GeneCBR101Automation
 
-Eredeti Nico projekt: https://github.com/nekowokaburu/GeneCBR101Automation
-Saját projekt: https://github.com/r32rz782z82ze/GeneRev4-Web
-A kód a projekt GPL-3.0 szerinti terjesztésének megfelelően készült.
-
-A Windows GUI nem azonos Nico eredeti UWP alkalmazásával: új, Python/Tkinter kliens, amely Nico eredeti TCP vezérlési protokollját és a közös GeneRev4 hidat használja.
+A saját Windows GUI új Python/Tkinter kliens a Nico által használt protokollhoz, nem Nico eredeti UWP programjának változatlan fordítása.
